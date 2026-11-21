@@ -336,7 +336,8 @@ function playUbauneIntro() {
     const overlay = document.createElement('div');
     overlay.className = 'blackout';
     document.body.appendChild(overlay);
-    requestAnimationFrame(() => overlay.classList.add('on'));
+    void overlay.offsetWidth; // 一度描画させてからクラスを付け、フェードを確実に効かせる
+    overlay.classList.add('on');
     setTimeout(() => {
       setState('ubaune');
       overlay.classList.remove('on');
