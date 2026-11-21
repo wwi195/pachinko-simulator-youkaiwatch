@@ -745,13 +745,13 @@ function rareNote(html) {
   return `<p class="rare-note">${html}</p>`;
 }
 
-// 初当たりのハマり：1000回転超・100回転未満は出現率を表示
+// 初当たりのハマり：1000回転超・50回転以内は出現率を表示
 function hitIntervalProbHtml(n) {
   if (n > 1000) {
     const p = hitIntervalProbability(n).atLeast;
     return rareNote(`${n.toLocaleString()}回転以上ハマる確率 ${pctText(p)}%${rareText(p)}`);
   }
-  if (n < 100) {
+  if (n <= 50) {
     const p = hitIntervalProbability(n).within;
     return rareNote(`${n}回転以内に当たる確率 ${pctText(p)}%${rareText(p)}`);
   }
