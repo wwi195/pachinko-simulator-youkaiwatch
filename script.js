@@ -869,7 +869,7 @@ function buildScreen(state) {
     case 'pin_chance':
       return `<div class="screen">
         <p class="gasha-title">ピン刺しチャンス</p>
-        <p class="gasha-order">刺せ！</p>
+        <p class="gasha-order">トドメ</p>
         <button class="gasha-button" onclick="handlePinJudge()">PUSH</button>
       </div>`;
 
