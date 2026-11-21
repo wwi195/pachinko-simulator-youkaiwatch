@@ -66,6 +66,17 @@ function rollGasha() {
   return { kind, success: Math.random() < p };
 }
 
+// 初当たり1回が、RUSHに入らずコマチャレンジへ行く確率（約50%）
+const P_KOMA_FROM_HIT = (1 - LEGEND_SHARE) * (1 - GASHA_SUCCESS);
+
+// 初当たりまでの回転数の確率
+function hitIntervalProbability(n) {
+  return {
+    atLeast: Math.pow(1 - P_NORMAL_HIT, n - 1), // n回転以上ハマる確率
+    within: 1 - Math.pow(1 - P_NORMAL_HIT, n),  // n回転以内に当たる確率
+  };
+}
+
 // ---- RUSH「ヨーデルSONIC怪闘」（転落タイプ） ----
 // 1回転ごとに、直撃当たり 1/47.6 と 最終決戦 1/88.0 を同時に抽選する（同じ1回で両方は起きない）。
 // 最終決戦は1/4で勝利（1500個＋継続）、3/4で敗北＝転落。
@@ -148,6 +159,8 @@ if (typeof module !== 'undefined' && module.exports) {
     GASHA_LEVER_SUCCESS,
     GASHA_BUTTON_SUCCESS,
     rollGasha,
+    P_KOMA_FROM_HIT,
+    hitIntervalProbability,
     P_RUSH_DIRECT,
     P_FINAL_BATTLE,
     FINAL_BATTLE_WIN,

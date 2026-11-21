@@ -139,3 +139,17 @@ test('全体の流れ（モンテカルロ）：実質RUSH突入率 約61%、ト
   const total = keep + (1 - keep) * logic.komaPullbackProbability();
   assert.ok(close(total, 0.80, 0.01));
 });
+
+test('初当たりでコマチャレンジへ行く確率は約50%', () => {
+  const expected = 0.995 * (1 - 49.5 / 99.5);
+  assert.ok(Math.abs(logic.P_KOMA_FROM_HIT - expected) < 1e-12);
+  assert.ok(Math.abs(logic.P_KOMA_FROM_HIT - 0.5) < 1e-9);
+});
+
+test('ハマり確率：1回転以上は100%、n回転以内とn+1回転以上の合計は100%', () => {
+  assert.equal(logic.hitIntervalProbability(1).atLeast, 1);
+  const n = 500;
+  const a = logic.hitIntervalProbability(n).within;
+  const b = logic.hitIntervalProbability(n + 1).atLeast;
+  assert.ok(Math.abs(a + b - 1) < 1e-12);
+});

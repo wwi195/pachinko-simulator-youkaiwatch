@@ -20,6 +20,8 @@ const game = {
   normalHitCount: 0,
   rushEntryCount: 0,
   komaPullbackCount: 0,
+  komaStreak: 0,     // 初当たりでコマチャレンジに行った連続回数（初当たりでRUSHに入るとリセット）
+  lastRushSpins: 0,  // 最後に初当たりでRUSHに入ったときの通常時総回転数
   totalRushHits: 0,
   rushAllStats: { totalSpins: 0, finalBattles: 0, finalWins: 0 },
   session: null, // 初当たりから通常に戻るまでの1回分 { hits, nominalBalls, actualBalls, everRush, cycleSpins }
@@ -162,6 +164,7 @@ function runNormalSpin() {
     // EXのときは、フラッシュ＝RUSH確定。RUSHにならない当たりはフラッシュなしで「通常当たり」として出す
     if (game.flash === 'EX' && type === 'youkai' && !gasha.success) {
       startSession(interval);
+      markFirstHitKoma();
       const actual = award(300);
       addLog(`${interval}回転で通常当たり ＋${actual}球`, 'win');
       setState('ex_normal');
@@ -194,6 +197,15 @@ function startSession(interval) {
   game.session = { hits: 1, nominalBalls: 0, actualBalls: 0, everRush: false, cycleSpins: 0 };
 }
 
+// 初当たりの行き先を記録：RUSHならコマ連続をリセット、コマチャレンジなら+1
+function markFirstHitRush() {
+  game.komaStreak = 0;
+  game.lastRushSpins = game.totalSpins;
+}
+function markFirstHitKoma() {
+  game.komaStreak++;
+}
+
 function handleFlashJudge() {
   const p = game.pending;
   if (!p.isHit) {
@@ -203,6 +215,7 @@ function handleFlashJudge() {
   }
   startSession(p.interval);
   if (p.type === 'legend') {
+    markFirstHitRush();
     const actual = award(3000);
     addLog(`${p.interval}回転で大当たり！ レジェンドヨーデルエクストラ ＋${actual}球`, 'win');
     setState('legend_hit');
@@ -211,6 +224,7 @@ function handleFlashJudge() {
   const actual = award(300);
   if (game.flash === 'EX') {
     // EXのフラッシュはRUSHになる当たりだけ
+    markFirstHitRush();
     addLog(`${p.interval}回転で大当たり！ 妖怪FEVER ＋${actual}球 RUSH確定`, 'win');
     setState('ex_rush');
     return;
@@ -232,9 +246,11 @@ function handleGashaChallenge() {
 
 function handleGashaPush() {
   if (game.pending.gasha.success) {
+    markFirstHitRush();
     addLog('妖怪ガシャチャレンジ 成功！', 'rush');
     setState('gasha_success');
   } else {
+    markFirstHitKoma();
     addLog('妖怪ガシャチャレンジ 失敗');
     setState('gasha_fail');
   }
@@ -505,6 +521,8 @@ function resetGame() {
     normalHitCount: 0,
     rushEntryCount: 0,
     komaPullbackCount: 0,
+    komaStreak: 0,
+    lastRushSpins: 0,
     totalRushHits: 0,
     rushAllStats: { totalSpins: 0, finalBattles: 0, finalWins: 0 },
     session: null,
@@ -714,6 +732,41 @@ function flashLabel() {
   return game.flash === 'EX' ? 'EX（RUSH確定）' : `${game.flash}%`;
 }
 
+// ---- 出現率の表示（他機種と同じ形） ----
+function pctText(prob) {
+  const pct = prob * 100;
+  return pct >= 1 ? pct.toFixed(1) : pct >= 0.01 ? pct.toFixed(2) : pct.toPrecision(2);
+}
+function rareText(prob) {
+  return prob * 100 < 1 ? `<br>約${Math.round(1 / prob).toLocaleString()}回に1回の割合です` : '';
+}
+function rareNote(html) {
+  return `<p class="rare-note">${html}</p>`;
+}
+
+// 初当たりのハマり：1000回転超・100回転未満は出現率を表示
+function hitIntervalProbHtml(n) {
+  if (n > 1000) {
+    const p = hitIntervalProbability(n).atLeast;
+    return rareNote(`${n.toLocaleString()}回転以上ハマる確率 ${pctText(p)}%${rareText(p)}`);
+  }
+  if (n < 100) {
+    const p = hitIntervalProbability(n).within;
+    return rareNote(`${n}回転以内に当たる確率 ${pctText(p)}%${rareText(p)}`);
+  }
+  return '';
+}
+
+// コマチャレンジの連続（5回連続目から）＋前回の初当たりRUSHからのハマり
+const KOMA_STREAK_NOTICE_MIN = 5;
+function komaStreakNoticeHtml() {
+  const n = game.komaStreak;
+  if (n < KOMA_STREAK_NOTICE_MIN) return '';
+  const p = Math.pow(P_KOMA_FROM_HIT, n);
+  const hamari = game.totalSpins - game.lastRushSpins;
+  return rareNote(`コマチャレンジ　${n}回連続中<br>発生率 ${pctText(p)}%${rareText(p)}<br>前回の初当たりRUSHから ${hamari.toLocaleString()}回転ハマり`);
+}
+
 const P_NORMAL_HIT_DISPLAY = '1/319.7';
 const P_RUSH_DISPLAY = '図柄揃い 1/41.9（直撃 1/47.6・最終決戦 1/88.0）';
 const P_KOMA_DISPLAY = '1/399.6';
@@ -790,10 +843,10 @@ function buildScreen(state) {
     case 'ranking_view':
       return `<div class="screen">
         <p class="rush-result-title">🏆 最高出玉ランキング</p>
+        <button class="btn-sub" onclick="handleRankingBack()">戻る</button>
         <div class="rush-result-box">
           ${renderRankingList(loadRanking())}
         </div>
-        <button class="btn-sub" onclick="handleRankingBack()" style="margin-top:16px;">戻る</button>
       </div>`;
 
     case 'flash':
@@ -814,6 +867,7 @@ function buildScreen(state) {
       return `<div class="screen">
         <p class="result-sub">${p.interval}回転で大当たり</p>
         ${bonusBox('レジェンドヨーデルエクストラ', 3000, 'premium', '<p class="judge-label">RUSH直行！</p>')}
+        ${hitIntervalProbHtml(p.interval)}
         <button class="btn-action" onclick="enterRush()">▶ ヨーデルSONIC怪闘へ</button>
       </div>`;
 
@@ -821,6 +875,7 @@ function buildScreen(state) {
       return `<div class="screen">
         <p class="result-sub">${p.interval}回転で大当たり</p>
         ${bonusBox('妖怪FEVER', 300, 'standard', '<p class="judge-label">RUSH確定！</p>')}
+        ${hitIntervalProbHtml(p.interval)}
         <button class="btn-action" onclick="enterRush()">▶ ヨーデルSONIC怪闘へ</button>
       </div>`;
 
@@ -831,7 +886,9 @@ function buildScreen(state) {
           <p class="bonus-main normal-hit">通常当たり</p>
           <p class="bonus-sub">300個（＋${toActualBalls(300)}球）</p>
         </div>
+        ${hitIntervalProbHtml(p.interval)}
         <p class="result-sub">コマチャレンジ（時短${KOMA_SPINS}回）へ</p>
+        ${komaStreakNoticeHtml()}
         <button class="btn-sub" onclick="enterKoma()" style="margin-top:8px;">▶ コマチャレンジへ</button>
       </div>`;
 
@@ -839,6 +896,7 @@ function buildScreen(state) {
       return `<div class="screen">
         <p class="result-sub">${p.interval}回転で大当たり</p>
         ${bonusBox('妖怪FEVER', 300)}
+        ${hitIntervalProbHtml(p.interval)}
         <button class="btn-action" onclick="handleGashaChallenge()">妖怪ガシャチャレンジへ</button>
       </div>`;
 
@@ -869,6 +927,7 @@ function buildScreen(state) {
       return `<div class="screen">
         <p class="result-main lose">失敗…</p>
         <p class="result-sub">コマチャレンジ（時短${KOMA_SPINS}回）へ</p>
+        ${komaStreakNoticeHtml()}
         <button class="btn-sub" onclick="enterKoma()" style="margin-top:8px;">▶ 次へ</button>
       </div>`;
 
@@ -995,12 +1054,12 @@ function buildScreen(state) {
             <span class="rr-val">${Math.round(s.actualBalls).toLocaleString()}球</span>
           </div>
         </div>
+        <button class="btn-action" onclick="handleSessionEnd()">▶ 通常へ戻る</button>
         <div class="rush-result-box">
           <p class="rr-section">🏆 最高出玉ランキング</p>
           ${rank && rank.madeList ? '<p class="rank-madelist">ランクイン！</p>' : ''}
           ${renderRankingList(rank ? rank.list : loadRanking(), rank ? rank.entry : null)}
         </div>
-        <button class="btn-action" onclick="handleSessionEnd()" style="margin-top:16px;">▶ 通常へ戻る</button>
       </div>`;
     }
 

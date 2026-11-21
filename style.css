@@ -682,3 +682,6 @@ body {
 /* ウバウネ決戦の入りの暗転（画面全体） */
 .blackout { position: fixed; inset: 0; background: #000; opacity: 0; transition: opacity 0.5s ease; z-index: 9999; }
 .blackout.on { opacity: 1; }
+
+/* 出現率の告知（ハマり・コマチャレンジ連続） */
+.rare-note { margin: 4px 0 0; text-align: center; font-size: 12px; font-weight: bold; line-height: 1.6; color: #c9a227; }
