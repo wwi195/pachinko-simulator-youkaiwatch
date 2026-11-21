@@ -157,9 +157,16 @@ function runNormalSpin() {
     game.pending = { isHit: false, interval };
   } else {
     const type = rollNormalHitType();
-    // EXのときは、フラッシュの時点でRUSHかどうかまで決めて見せる
     const gasha = type === 'youkai' ? rollGasha() : null;
     game.pending = { isHit: true, interval, type, gasha };
+    // EXのときは、フラッシュ＝RUSH確定。RUSHにならない当たりはフラッシュなしで「通常当たり」として出す
+    if (game.flash === 'EX' && type === 'youkai' && !gasha.success) {
+      startSession(interval);
+      const actual = award(300);
+      addLog(`${interval}回転で通常当たり ＋${actual}球`, 'win');
+      setState('ex_normal');
+      return true;
+    }
   }
   addLog(`${interval}回転で入賞時フラッシュ！`);
   setState('flash');
@@ -203,13 +210,9 @@ function handleFlashJudge() {
   }
   const actual = award(300);
   if (game.flash === 'EX') {
-    if (p.gasha.success) {
-      addLog(`${p.interval}回転で大当たり！ 妖怪FEVER ＋${actual}球 RUSH確定`, 'win');
-      setState('ex_rush');
-    } else {
-      addLog(`${p.interval}回転で通常当たり ＋${actual}球`, 'win');
-      setState('ex_normal');
-    }
+    // EXのフラッシュはRUSHになる当たりだけ
+    addLog(`${p.interval}回転で大当たり！ 妖怪FEVER ＋${actual}球 RUSH確定`, 'win');
+    setState('ex_rush');
     return;
   }
   addLog(`${p.interval}回転で大当たり！ 妖怪FEVER ＋${actual}球`, 'win');
@@ -681,13 +684,13 @@ function spinRateOptionsHtml() {
 
 function flashOptionsHtml() {
   return FLASH_OPTIONS.map((opt) => {
-    const label = opt === 'EX' ? 'EX（当たり確定）' : `信頼度${opt}%`;
+    const label = opt === 'EX' ? 'EX（RUSH確定）' : `信頼度${opt}%`;
     return `<option value="${opt}" ${opt === game.flash ? 'selected' : ''}>${label}</option>`;
   }).join('');
 }
 
 function flashLabel() {
-  return game.flash === 'EX' ? 'EX' : `${game.flash}%`;
+  return game.flash === 'EX' ? 'EX（RUSH確定）' : `${game.flash}%`;
 }
 
 const P_NORMAL_HIT_DISPLAY = '1/319.7';
@@ -699,6 +702,7 @@ function rushIdleScreen() {
     <p class="yodel-label">ヨーデルSONIC怪闘</p>
     <p class="chain-label">${game.session.hits}連チャン中</p>
     <p class="rush-sub">獲得出玉 <span>${game.session.nominalBalls.toLocaleString()}</span> 個</p>
+    <p class="rush-spins">${game.session.cycleSpins}回転</p>
     <div class="rush-spin-btns">
       <button class="btn-rush-spin" onclick="handleRushSpin()">1回転</button>
       <button class="btn-rush-spin" onclick="handleRushSpin10()">10回転</button>
@@ -801,12 +805,13 @@ function buildScreen(state) {
 
     case 'ex_normal':
       return `<div class="screen">
-        <p class="result-sub">${p.interval}回転で大当たり</p>
+        <p class="result-sub">${p.interval}回転で当たり</p>
         <div class="vibun-box">
           <p class="bonus-main normal-hit">通常当たり</p>
           <p class="bonus-sub">300個（＋${toActualBalls(300)}球）</p>
         </div>
-        <button class="btn-sub" onclick="enterKoma()" style="margin-top:8px;">▶ 次へ</button>
+        <p class="result-sub">コマチャレンジ（時短${KOMA_SPINS}回）へ</p>
+        <button class="btn-sub" onclick="enterKoma()" style="margin-top:8px;">▶ コマチャレンジへ</button>
       </div>`;
 
     case 'youkai_fever':

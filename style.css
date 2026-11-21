@@ -298,6 +298,7 @@ body {
 
 .rush-sub { font-size: 16px; color: #666; }
 .rush-sub span { font-size: 32px; font-weight: bold; color: var(--c-ruri); }
+.rush-spins { font-size: 12px; color: #999; margin-top: -4px; font-variant-numeric: tabular-nums; }
 
 .chain-label {
   font-size: 15px;
