@@ -801,7 +801,7 @@ function komaIdleScreen() {
       <button class="btn-rush-spin" onclick="handleKomaSpin10()">10回転</button>
       <button class="btn-rush-spin skip" ${skipDisabled ? 'disabled' : 'onclick="handleKomaSkip()"'}>スキップ</button>
     </div>
-    <p class="prob-hint">大当たり確率 ${P_KOMA_DISPLAY}（引き戻すとRUSHへ）</p>
+    <p class="prob-hint">大当たり確率 ${P_KOMA_DISPLAY}</p>
     <button class="btn-taiten" onclick="handleTaiten()">退店する</button>
   </div>`;
 }
@@ -1001,7 +1001,7 @@ function buildScreen(state) {
       return `<div class="screen">
         <p class="result-sub">${p.spins}回転</p>
         <p class="final-title">最終決戦</p>
-        <p class="prob-hint">勝てば 1500個＋RUSH継続 ／ 負ければRUSH終了</p>
+        <p class="prob-hint">勝率 1/4<br>勝てば 1500個＋RUSH継続 ／ 負ければRUSH終了</p>
         <button class="btn-action" onclick="handleFinalBattle()">▶ 勝負！</button>
       </div>`;
 
