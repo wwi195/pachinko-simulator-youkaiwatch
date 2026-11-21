@@ -327,7 +327,8 @@ function runRushSpin(opts = {}) {
 
 // ウバウネ決戦の入り：SONIC FEVERを見せて（次へは押せない）、1秒後に画面全体を暗転してウバウネ決戦へ
 const UBAUNE_INTRO_WAIT_MS = 1000;
-const BLACKOUT_FADE_MS = 500;
+// 暗転は全体で0.8秒：暗くなる0.25秒＋真っ黒0.3秒＋明ける0.25秒
+const BLACKOUT_FADE_MS = 250;
 const BLACKOUT_HOLD_MS = 300;
 
 function playUbauneIntro() {

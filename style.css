@@ -680,7 +680,7 @@ body {
 .gasha-lever:active .lever-stick { transform: translateX(-50%) scaleY(0.55); transform-origin: bottom; top: 92px; }
 
 /* ウバウネ決戦の入りの暗転（画面全体） */
-.blackout { position: fixed; inset: 0; background: #000; opacity: 0; transition: opacity 0.5s ease; z-index: 9999; }
+.blackout { position: fixed; inset: 0; background: #000; opacity: 0; transition: opacity 0.25s ease; z-index: 9999; }
 .blackout.on { opacity: 1; }
 
 /* 出現率の告知（ハマり・コマチャレンジ連続） */
