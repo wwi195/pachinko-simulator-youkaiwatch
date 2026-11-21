@@ -297,7 +297,8 @@ function runRushSpin(opts = {}) {
     award(UBAUNE_BASE);
     game.pending = { type, spins, total: UBAUNE_BASE, wins: 0, last: null };
     addLog(`${spins}回転で当選！ ウバウネ決戦 ${UBAUNE_BASE}個`, 'rush');
-    setState('ubaune');
+    setState('ubaune_intro');
+    playUbauneIntro();
     return true;
   }
   const nominal = type === 'enma' ? 3000 : 1500; // ピン刺し成功分の1500個はジャッジ後に足す
@@ -306,6 +307,26 @@ function runRushSpin(opts = {}) {
   addLog(`${spins}回転で当選！ ${RUSH_HIT_LABELS[type]} ＋${actual}球`, 'rush');
   setState('rush_hit');
   return true;
+}
+
+// ウバウネ決戦の入り：SONIC FEVERを見せて（次へは押せない）、1秒後に画面全体を暗転してウバウネ決戦へ
+const UBAUNE_INTRO_WAIT_MS = 1000;
+const BLACKOUT_FADE_MS = 500;
+const BLACKOUT_HOLD_MS = 300;
+
+function playUbauneIntro() {
+  setTimeout(() => {
+    if (game.state !== 'ubaune_intro') return;
+    const overlay = document.createElement('div');
+    overlay.className = 'blackout';
+    document.body.appendChild(overlay);
+    requestAnimationFrame(() => overlay.classList.add('on'));
+    setTimeout(() => {
+      setState('ubaune');
+      overlay.classList.remove('on');
+      setTimeout(() => overlay.remove(), BLACKOUT_FADE_MS);
+    }, BLACKOUT_FADE_MS + BLACKOUT_HOLD_MS);
+  }, UBAUNE_INTRO_WAIT_MS);
 }
 
 function handleRushSpin() {
@@ -885,6 +906,14 @@ function buildScreen(state) {
         <p class="result-main lose small">失敗…</p>
         ${bonusBox('SONIC FEVER', 1500)}
         <button class="btn-sub" onclick="setState('rush_idle')" style="margin-top:8px;">▶ RUSHへ</button>
+      </div>`;
+
+    case 'ubaune_intro':
+      return `<div class="screen">
+        <p class="result-sub">${p.spins}回転で当選</p>
+        <p class="chain-label">${game.session.hits}連チャン</p>
+        ${bonusBox('SONIC FEVER', 1500)}
+        <button class="btn-action" type="button" aria-disabled="true">▶ 次へ</button>
       </div>`;
 
     case 'ubaune': {

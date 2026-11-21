@@ -678,3 +678,7 @@ body {
 .gasha-lever:active .lever-knob, .gasha-lever:active .lever-stick { top: auto; }
 .gasha-lever:active .lever-knob { transform: translate(-50%, 40px); }
 .gasha-lever:active .lever-stick { transform: translateX(-50%) scaleY(0.55); transform-origin: bottom; top: 92px; }
+
+/* ウバウネ決戦の入りの暗転（画面全体） */
+.blackout { position: fixed; inset: 0; background: #000; opacity: 0; transition: opacity 0.5s ease; z-index: 9999; }
+.blackout.on { opacity: 1; }
